@@ -1,0 +1,9 @@
+node_modules/
+.agents/
+.claude/
+.windsurf/
+.env
+dist/
+uploads/
+logs/
+/src/generated/prisma
