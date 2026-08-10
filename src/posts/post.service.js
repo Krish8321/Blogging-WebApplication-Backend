@@ -14,7 +14,6 @@ export const createPost = async ({authorId, title, slug, content, coverImageUrl 
     return post;
 };
 
-
 export const getAllPosts = async (req, res) => {
     const posts = await prisma.post.findMany({
         where: {
