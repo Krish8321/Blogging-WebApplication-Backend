@@ -4,6 +4,10 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
+
+    //cors
+    CLIENT_URL: z.string().url(),
+
     PORT: z.string().default("5000"),
     NODE_ENV: z.string().default("development"),
 
@@ -15,6 +19,7 @@ const envSchema = z.object({
 
     JWT_ACCESS_SECRET: z.string().min(10),
     JWT_REFRESH_SECRET: z.string().min(10),
+
 });
 
 export const env = envSchema.parse(process.env);

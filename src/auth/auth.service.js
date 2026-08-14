@@ -217,6 +217,9 @@ const loginSchema = z.object({
   password: z.string().min(8,"Password must be at least 8 characters"),
 });
 
+
+// Login Route 
+
 export const login = async (req, res) =>{
   try{
     const result = loginSchema.safeParse(req.body);
@@ -281,11 +284,17 @@ export const login = async (req, res) =>{
 
     // console.log("AccessToken : ", accessToken);
 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Logged-in Successfully!!!!",
       accessToken,
-      refreshToken,
     });
 
   }catch (err){
@@ -298,23 +307,24 @@ export const login = async (req, res) =>{
   }
 }
 
-const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, "Refresh Token is required"),
-});
+// const refreshTokenSchema = z.object({
+//   refreshToken: z.string().min(1, "Refresh Token is required"),
+// });
 
 export const refreshAccessToken = async (req, res) => {
   try{
 
-    const result = refreshTokenSchema.safeParse(req.body);
+    // const result = refreshTokenSchema.safeParse(req.body);
+    const refreshToken = req.cookies.refreshToken;
 
-    if(!result.success){
+    if(!refreshToken){
       return res.status(400).json({
         success: false,
-        error: result.error.flatten().fieldErrors,
+        message: "RefreshToken is required",
       });
     }
 
-    const { refreshToken } = result.data;
+    // const { refreshToken } = result.data;
 
     try{
         const decode = jwt.verify(
@@ -391,15 +401,20 @@ export const refreshAccessToken = async (req, res) => {
           expiresAt: newRefreshTokenExpiry,
         },
       });
+    });
 
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
 
     return res.status(200).json({
       success: true,
-      message: "Working!!!",
-      newAccessToken,
-      newRefreshToken,
+      message: "Access token refreshed successfully",
+      accessToken: newAccessToken,
     });
 
   }catch (err){
@@ -413,7 +428,8 @@ export const refreshAccessToken = async (req, res) => {
 
 export const logout = async (req, res) => {
   try{
-    const {refreshToken} = req.body;
+    // const {refreshToken} = req.body;
+    const refreshToken = req.cookies.refreshToken;
 
     if(!refreshToken){
       return res.status(400).json({
@@ -439,6 +455,12 @@ export const logout = async (req, res) => {
       where: {
         token: refreshToken,
       },
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     return res.status(200).json({
