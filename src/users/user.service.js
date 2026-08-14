@@ -13,6 +13,32 @@ export const getMyProfile = async (userId) => {
     return user;
 };
 
+export const getAllUsers = async () => {
+    const users = await prisma.user.findMany({
+        where: {
+            isVerified: true,
+        },
+        select: {
+            id: true,
+            profile: {
+                select: {
+                    username: true,
+                    displayName: true,
+                    avatarUrl: true,
+                    bio: true,
+                    website: true,
+                    isPrivate: true,
+                },
+            },
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+
+    return users;
+};
+
 export const updateMyProfile = async (userId, data) => {
     const updatedProfile = await prisma.profile.update({
         where: {
@@ -207,3 +233,34 @@ export const getFollowing = async (username) => {
     return {following};
 };
 
+export const searchUsersByUsername = async (username) => {
+    const users = await prisma.user.findMany({
+        where: {
+            isVerified: true,
+            profile: {
+                username: {
+                    contains: username,
+                    mode: "insensitive",
+                },
+            },
+        },
+        select: {
+            id: true,
+            profile: {
+                select: {
+                    username: true,
+                    displayName: true,
+                    avatarUrl: true,
+                    bio: true,
+                    website: true,
+                    isPrivate: true,
+                },
+            },
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+
+    return users;
+};

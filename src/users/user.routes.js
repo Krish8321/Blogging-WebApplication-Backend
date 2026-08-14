@@ -1,11 +1,30 @@
 import express from "express";
 import { authMiddleware } from "../auth/auth.middleware.js";
-import { getMyProfile, updateMyProfile, getPublicProfile } from "./user.service.js";
+import { getMyProfile, updateMyProfile, getPublicProfile, getAllUsers, searchUsersByUsername } from "./user.service.js";
 import { followUser, unfollowUser, getFollowers, getFollowing } from "./user.service.js";
 import { updateProfileSchema } from "./user.schema.js";
 import { success } from "zod";
 
 const router = express.Router();
+
+router.get("/", async (req, res) => {
+    try {
+        const users = await getAllUsers();
+
+        return res.status(200).json({
+            success: true,
+            users,
+        });
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error(GetAllUsers)",
+        });
+    }
+});
 
 router.get("/me", authMiddleware, async(req, res) => {
     try{
@@ -29,6 +48,34 @@ router.get("/me", authMiddleware, async(req, res) => {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error (while fetching profile)",
+        });
+    }
+});
+
+router.get("/search", async (req, res) => {
+    try {
+        const { username } = req.query;
+
+        if (!username || username.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Username is required",
+            });
+        }
+
+        const users = await searchUsersByUsername(username.trim());
+
+        return res.status(200).json({
+            success: true,
+            users,
+        });
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error(SearchUsers)",
         });
     }
 });
