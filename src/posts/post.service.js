@@ -14,7 +14,7 @@ export const createPost = async ({authorId, title, slug, content, coverImageUrl 
     return post;
 };
 
-export const getAllPosts = async (req, res) => {
+export const getAllPosts = async (viewerId = null) => {
     const posts = await prisma.post.findMany({
         where: {
             status: "PUBLISHED",
@@ -23,7 +23,14 @@ export const getAllPosts = async (req, res) => {
             author: {
                 select: {
                     id: true,
-                    email: true,
+                    profile: {
+                        select: {
+                            username: true,
+                            displayName: true,
+                            avatarUrl: true,
+                            isPrivate: true,
+                        },
+                    },
                 },
             },
         },
@@ -31,10 +38,49 @@ export const getAllPosts = async (req, res) => {
             createdAt: "desc",
         },
     });
-    return posts;
+
+    const visiblePosts = [];
+
+    for(const post of posts){
+        const authorId = post.author.id;
+        const isPrivate = post.author.profile?.isPrivate ?? false;
+
+        if (!isPrivate) {
+            visiblePosts.push(post);
+            continue;
+        }
+
+        if (viewerId === authorId) {
+            visiblePosts.push(post);
+            continue;
+        }
+
+        if (!viewerId) {
+            continue;
+        }
+
+        // console.log("Checking follow:",viewerId,"→",authorId);
+
+        const follow = await prisma.follow.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId: viewerId,
+                    followingId: authorId,
+                },
+            },
+        });
+
+        // console.log("FOLLOW RESULT:", follow);
+        if (follow) {
+            visiblePosts.push(post);
+        }
+    }
+
+    return visiblePosts;
 };
 
-export const getPostById = async (id) => {
+// with updated private posts
+export const getPostById = async (id, viewerId = null) => {
     const post = await prisma.post.findFirst({
         where: {
             id,
@@ -45,10 +91,49 @@ export const getPostById = async (id) => {
                 select: {
                     id: true,
                     email: true,
+                    profile: {
+                        select: {
+                            username: true,
+                            displayName: true,
+                            avatarUrl: true,
+                            isPrivate: true,
+                        },
+                    },
                 },
             },
         },
     });
+
+    if(!post) return null;
+
+    const authorId = post.author.id;
+    const isPrivate = post.author.profile?.isPrivate ?? false;
+
+    if (!isPrivate) {
+        return post;
+    }
+
+    if (viewerId === authorId) {
+        return post;
+    }
+
+    if (!viewerId) {
+        return null;
+    }
+
+    const follow = await prisma.follow.findUnique({
+        where: {
+            followerId_followingId: {
+                followerId: viewerId,
+                followingId: authorId,
+            },
+        },
+    });
+
+    if (!follow) {
+        return null;
+    }
+
     return post;
 };
 
@@ -124,4 +209,64 @@ export const deletePost = async ({postId, authorId}) => {
     });
 
     return true;
+}
+
+// Post lifecycle, like Published or not , archived posts 
+
+export const publishPost = async ({postId, authorId}) => {
+    const post = await prisma.post.findUnique({
+        where: {
+            id: postId,
+        },
+    });
+
+    if(!post){
+        return null;
+    }
+
+    if(post.authorId !== authorId){
+        return "FORBIDDEN";
+    }
+
+    const publishedPost = await prisma.post.update({
+        where: {
+            id: postId,
+        },
+        data: {
+            status: "PUBLISHED",
+            publishedAt: new Date(),
+        },
+    });
+
+    return publishedPost;
+
+}
+
+
+export const archivePost = async ({postId, authorId}) => {
+    const post = await prisma.post.findUnique({
+        where: {
+            id: postId,
+        },
+    });
+
+    if(!post){
+        return null;
+    }
+
+    if(post.authorId !== authorId){
+        return "FORBIDDEN";
+    }
+
+    const archivedPost = await prisma.post.update({
+        where: {
+            id: postId,
+        },
+        data: {
+            status: "ARCHIVED",
+        },
+    });
+
+    return archivedPost;
+
 }

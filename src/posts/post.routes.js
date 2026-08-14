@@ -1,8 +1,8 @@
 import express from "express";
-import { authMiddleware } from "../auth/auth.middleware.js";
+import { authMiddleware, getPostMiddleware } from "../auth/auth.middleware.js";
 import { success } from "zod";
 import { createPost, getAllPosts, getPostById, getMyPosts } from "./post.service.js";
-import { updatePost, deletePost } from "./post.service.js";
+import { updatePost, deletePost, publishPost, archivePost } from "./post.service.js";
 
 const router = express.Router();
 
@@ -40,9 +40,10 @@ router.post("/", authMiddleware, async (req, res)=> {
     }
 });
 
-router.get("/", async(req, res) => {
+router.get("/",getPostMiddleware, async(req, res) => {
     try{
-        const posts = await getAllPosts();
+        const viewerId = req.user?.userId ?? null;
+        const posts = await getAllPosts(viewerId);
 
         return res.status(200).json({
             success: true,
@@ -57,7 +58,7 @@ router.get("/", async(req, res) => {
             message: "Internal Server Error(GetPost)",
         });
     }
-})
+});
 
 // my all post 
 router.get("/my-posts", authMiddleware, async (req, res) => {
@@ -80,18 +81,13 @@ router.get("/my-posts", authMiddleware, async (req, res) => {
 });
 
 // get post by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id",getPostMiddleware, async (req, res) => {
     try{
         const { id } = req.params;
-        
-        // if(!id){
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: "Post id required!",
-        //     });
-        // }
 
-        const post = await getPostById(id);
+        const viewerId = req.user?.userId ?? null;
+
+        const post = await getPostById(id,viewerId);
 
         if (!post) {
             return res.status(404).json({
@@ -203,6 +199,84 @@ router.delete("/:id", authMiddleware, async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Internal server error (Deleting error)",
+        });
+    }
+})
+
+router.patch("/:id/publish", authMiddleware, async(req, res) => {
+    try{
+        const { id } = req.params;
+
+        const post = publishPost({
+            postId: id,
+            authorId: req.user.userId,
+        });
+
+        if(!post){
+            return res.status(404).json({
+                success: false,
+                message: "Post not found",
+            });
+        }
+
+        if(post === "FORBIDDEN"){
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to publish this post",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Post published successfully",
+            post,
+        });
+
+    }catch (err){
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error (Publishing error)",
+        });
+    }
+});
+
+router.patch("/:id/archive", authMiddleware, async(req, res) => {
+    try{
+        const { id } = req.params;
+
+        const post = archivePost({
+            postId: id,
+            authorId: req.user.userId,
+        });
+
+        if(!post){
+            return res.status(404).json({
+                success: false,
+                message: "Post not found",
+            });
+        }
+
+        if(post === "FORBIDDEN"){
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to archive this post",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Post archived successfully",
+            post,
+        });
+
+    }catch (err){
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error (Archive post error)",
         });
     }
 })

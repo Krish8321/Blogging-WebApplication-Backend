@@ -81,3 +81,37 @@ export const requireRole = (...allowedRoles) => {
         next();
     };
 };
+
+export const getPostMiddleware = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            req.user = null;
+            return next();
+        }
+
+        if (!authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid authorization format",
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const decoded = jwt.verify(
+            token,
+            env.JWT_ACCESS_SECRET
+        );
+
+        req.user = decoded;
+
+        next();
+
+    } catch (error) {
+        console.error("GET POST MIDDLEWARE ERROR",error);
+        req.user = null;
+        next();
+    }
+};
