@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const optionalUrl = z.preprocess(
+  (value) => value === "" ? undefined : value,
+  z.url().optional()
+);
+
 export const updateProfileSchema = z.object({
     displayName: z
         .string()
@@ -12,21 +17,13 @@ export const updateProfileSchema = z.object({
         .max(500, "Bio cannot exceed 500 characters")
         .optional(),
 
-    avatarUrl: z
-        .url("Invalid avatar URL")
-        .optional(),
+    avatarUrl: optionalUrl,
 
-    website: z
-        .url("Invalid website URL")
-        .optional(),
+    website: optionalUrl,
 
-    github: z
-        .url("Invalid GitHub URL")
-        .optional(),
+    github: optionalUrl,
 
-    linkedin: z
-        .url("Invalid LinkedIn URL")
-        .optional(),
+    linkedin: optionalUrl,
 
     isPrivate: z
         .boolean()
