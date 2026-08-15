@@ -89,6 +89,9 @@ export const register = async (req, res) => {
     const otp = crypto.randomInt(100000, 1000000).toString();
     // console.log(otp);
 
+    // console.log("We sent OTP here Because Gmail service is under contrsuction");
+    // console.log("Your OTP is here : ", otp);
+
     const userData = {
       username,
       displayName,
@@ -127,6 +130,7 @@ export const register = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Verification mail send Successfully.",
+      otp: otp,
     });
   } catch (err) {
     console.error(err);
