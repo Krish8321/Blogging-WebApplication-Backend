@@ -130,7 +130,6 @@ export const register = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Verification mail send Successfully.",
-      otp: otp,
     });
   } catch (err) {
     console.error(err);

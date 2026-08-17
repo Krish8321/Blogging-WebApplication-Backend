@@ -17,6 +17,14 @@ const envSchema = z.object({
     EMAIL_USER: z.string().email(),
     EMAIL_PASS: z.string().min(16),
 
+    // SMTP variables
+    SMTP_HOST: z.string().min(1),
+    SMTP_PORT: z.coerce.number(),
+    SMTP_USER: z.string().min(1),
+    SMTP_PASS: z.string().min(1),
+    SMTP_FROM: z.string().email(),
+
+
     JWT_ACCESS_SECRET: z.string().min(10),
     JWT_REFRESH_SECRET: z.string().min(10),
 

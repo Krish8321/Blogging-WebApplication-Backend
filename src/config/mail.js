@@ -2,22 +2,30 @@ import nodemailer from "nodemailer";
 import { env } from "./env.js";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: env.EMAIL_USER,
-    pass: env.EMAIL_PASS,
-  },
+//   service: "gmail",
+//   auth: {
+//     user: env.EMAIL_USER,
+//     pass: env.EMAIL_PASS,
+//   },
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: false,
+    auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
+    },
+
 });
 
 export default transporter;
 
 export const sendVerificationEmail = async ({ email, displayName, otp }) => {
   await transporter.sendMail({
-    from: env.EMAIL_USER,
+    from: `"Ink." <${env.SMTP_FROM}>`,
     to: email,
-    subject: "Verify Your Blog account !!",
+    subject: "Verify Your Ink. account !!",
     html: `
-            <h2>Welcome to Blog</h2>
+            <h2>Welcome to Ink.- Bespoke Stories</h2>
 
             <p>Hello <strong>${displayName}</strong>,</p>
 
@@ -39,16 +47,16 @@ export const sendVerificationEmail = async ({ email, displayName, otp }) => {
 
             <hr>
 
-            <p>Team Blogify</p>
+            <p>Team Ink.</p>
         `,
   });
 };
 
 export const sendPasswordResetEmail = async ({ email, displayName, otp }) => {
     await transporter.sendMail({
-        from: env.EMAIL_USER,
+        from: `"Ink." <${env.SMTP_FROM}>`,
         to: email,
-        subject: "Reset Your Blogify Password",
+        subject: "Reset Your Ink.",
         html: `
             <h2>Password Reset Request</h2>
 
@@ -73,7 +81,7 @@ export const sendPasswordResetEmail = async ({ email, displayName, otp }) => {
 
             <hr>
 
-            <p>Team Blogify</p>
+            <p>Team Ink.</p>
         `,
     });
 };

@@ -17,16 +17,16 @@ const startServer = async () => {
         // console.log(env.EMAIL_USER);
         // console.log(env.EMAIL_PASS);
 
-        // await transporter.verify();
-        // console.log("Gmail connected");
-        transporter.verify()
-            .then(() => {
-                console.log("Gmail connected");
-            })
-            .catch((err) => {
-                console.error("SMTP connection failed:");
-                console.error(err);
-            });
+        await transporter.verify();
+        console.log("Gmail connected");
+        // transporter.verify()
+        //     .then(() => {
+        //         console.log("Gmail connected");
+        //     })
+        //     .catch((err) => {
+        //         console.error("SMTP connection failed:");
+        //         console.error(err);
+        //     });
 
         app.listen(PORT, () => {
             console.log(`Server runnig on port ${PORT}`);
